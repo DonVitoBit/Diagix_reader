@@ -3,44 +3,42 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
+  ActivityIndicator,
   ViewStyle,
   TextStyle,
-  ActivityIndicator,
+  TouchableOpacityProps,
 } from 'react-native';
-import { BRAND_COLOR, radius, typography } from '@/styles/theme';
 
-interface ButtonProps {
-  onPress: () => void;
+interface ButtonProps extends TouchableOpacityProps {
   title: string;
+  loading?: boolean;
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'small' | 'medium' | 'large';
-  disabled?: boolean;
-  loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
 
 export function Button({
-  onPress,
   title,
+  loading = false,
   variant = 'primary',
   size = 'medium',
-  disabled = false,
-  loading = false,
   style,
   textStyle,
+  disabled,
+  ...props
 }: ButtonProps) {
   const getBackgroundColor = () => {
     if (disabled) return '#E5E7EB';
     switch (variant) {
       case 'primary':
-        return BRAND_COLOR;
+        return '#70C5BE';
       case 'secondary':
-        return '#F1F3F5';
+        return '#F3F4F6';
       case 'outline':
         return 'transparent';
       default:
-        return BRAND_COLOR;
+        return '#70C5BE';
     }
   };
 
@@ -51,7 +49,7 @@ export function Button({
         return '#FFFFFF';
       case 'secondary':
       case 'outline':
-        return '#1A1A1A';
+        return '#111827';
       default:
         return '#FFFFFF';
     }
@@ -68,39 +66,29 @@ export function Button({
     }
   };
 
-  const getBorderStyle = () => {
-    return variant === 'outline' ? {
-      borderWidth: 1,
-      borderColor: disabled ? '#E5E7EB' : BRAND_COLOR,
-    } : {};
-  };
-
   return (
     <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
       style={[
         styles.button,
         {
           backgroundColor: getBackgroundColor(),
           ...getPadding(),
-          ...getBorderStyle(),
+          borderWidth: variant === 'outline' ? 1 : 0,
+          borderColor: disabled ? '#E5E7EB' : '#70C5BE',
         },
         style,
       ]}
+      disabled={disabled || loading}
+      {...props}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? '#FFFFFF' : BRAND_COLOR}
-          size="small"
-        />
+        <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : '#70C5BE'} />
       ) : (
         <Text
           style={[
             styles.text,
             {
               color: getTextColor(),
-              ...typography.button,
               fontSize: size === 'small' ? 14 : 16,
             },
             textStyle,
@@ -115,12 +103,11 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: radius.md,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
   },
   text: {
-    textAlign: 'center',
+    fontWeight: '600',
   },
 });
