@@ -1,69 +1,19 @@
-import React, { Suspense } from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
-import { BookList } from '@/components/BookList';
-import { useStore } from '@/store';
-import { theme, spacing } from '@/styles/theme';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { LoadingScreen } from '@/components/LoadingScreen';
-import { useQueryErrorResetBoundary } from '@tanstack/react-query';
-import type { Book } from '@/types/supabase';
+import { View, Text, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
+import { Button } from '@/components/Button';
+import { theme, typography, spacing } from '@/styles/theme';
 
-// Ленивая загрузка тяжелых компонентов
-const RecentBooks = React.lazy(() => import('@/components/RecentBooks'));
-const CollectionsList = React.lazy(() => import('@/components/CollectionsList'));
-
-export default function LibraryScreen() {
-  const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = theme[colorScheme === 'dark' ? 'dark' : 'light'];
-  const { reset } = useQueryErrorResetBoundary();
-  
-  // Получаем состояние из глобального хранилища
-  const addRecentBook = useStore(state => state.addRecentBook);
-  const favoriteBooks = useStore(state => state.favoriteBooks);
-  const toggleFavorite = useStore(state => state.toggleFavorite);
-
-  const handleBookPress = (book: Book) => {
-    addRecentBook(book.id);
-    router.push(`/reader?id=${book.id}`);
-  };
-
+export default function HomeScreen() {
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ErrorBoundary
-        onReset={reset}
-        fallback={({ error, resetErrorBoundary }) => (
-          <ErrorScreen error={error} onRetry={resetErrorBoundary} />
-        )}
-      >
-        <Suspense fallback={<LoadingScreen />}>
-          {/* Недавние книги */}
-          <RecentBooks
-            style={styles.section}
-            onBookPress={handleBookPress}
-          />
-
-          {/* Коллекции */}
-          <CollectionsList
-            style={styles.section}
-            onBookPress={handleBookPress}
-          />
-
-          {/* Основной список книг */}
-          <BookList
-            onBookPress={handleBookPress}
-            renderItem={(book) => (
-              <BookCard
-                book={book}
-                isFavorite={favoriteBooks.has(book.id)}
-                onFavoritePress={() => toggleFavorite(book.id)}
-                onPress={() => handleBookPress(book)}
-              />
-            )}
-          />
-        </Suspense>
-      </ErrorBoundary>
+    <View style={styles.container}>
+      <Text style={styles.title}>Diagix Reader</Text>
+      <Text style={styles.subtitle}>Читайте книги в удобном формате</Text>
+      
+      <View style={styles.buttons}>
+        <Link href="/auth" asChild>
+          <Button title="Войти" />
+        </Link>
+      </View>
     </View>
   );
 }
@@ -71,8 +21,21 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
   },
-  section: {
-    marginBottom: spacing.lg,
+  title: {
+    ...typography.h1,
+    marginBottom: spacing.sm,
+    color: theme.light.text,
+  },
+  subtitle: {
+    ...typography.body,
+    marginBottom: spacing.xl,
+    color: theme.light.textSecondary,
+  },
+  buttons: {
+    gap: spacing.md,
   },
 });
