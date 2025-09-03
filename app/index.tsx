@@ -1,78 +1,69 @@
-import { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, useColorScheme } from 'react-native';
-import { supabase } from '@/lib/supabase';
-import { BookCard } from '@/components/BookCard';
-import { FadeInView } from '@/components/Animated';
+import React, { Suspense } from 'react';
+import { View, StyleSheet, useColorScheme } from 'react-native';
+import { useRouter } from 'expo-router';
+import { BookList } from '@/components/BookList';
+import { useStore } from '@/store';
 import { theme, spacing } from '@/styles/theme';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { useQueryErrorResetBoundary } from '@tanstack/react-query';
+import type { Book } from '@/types/supabase';
 
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  cover_url: string;
-  format: 'epub' | 'pdf';
-  file_path: string;
-  checksum: string;
-}
+// Ленивая загрузка тяжелых компонентов
+const RecentBooks = React.lazy(() => import('@/components/RecentBooks'));
+const CollectionsList = React.lazy(() => import('@/components/CollectionsList'));
 
 export default function LibraryScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = theme[colorScheme === 'dark' ? 'dark' : 'light'];
-  const [books, setBooks] = useState<(Book & { signedUrl: string })[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { reset } = useQueryErrorResetBoundary();
+  
+  // Получаем состояние из глобального хранилища
+  const addRecentBook = useStore(state => state.addRecentBook);
+  const favoriteBooks = useStore(state => state.favoriteBooks);
+  const toggleFavorite = useStore(state => state.toggleFavorite);
 
-  useEffect(() => {
-    loadBooks();
-  }, []);
-
-  async function loadBooks() {
-    try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('*')
-        .order('title');
-
-      if (error) throw error;
-
-      // Получаем подписанные URL для каждой книги
-      const booksWithUrls = await Promise.all(
-        (data || []).map(async (book) => {
-          const { data: { signedUrl }, error: urlError } = await supabase
-            .storage
-            .from('books')
-            .createSignedUrl(book.file_path, 24 * 60 * 60); // URL действителен 24 часа
-
-          if (urlError) throw urlError;
-          return { ...book, signedUrl };
-        })
-      );
-
-      setBooks(booksWithUrls);
-    } catch (error) {
-      console.error('Error loading books:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleBookPress = (book: Book) => {
+    addRecentBook(book.id);
+    router.push(`/reader?id=${book.id}`);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FadeInView style={styles.content}>
-        <FlatList
-          data={books}
-          renderItem={({ item, index }) => (
-            <BookCard
-              book={item}
-              index={index}
-              signedUrl={item.signedUrl}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.list}
-          columnWrapperStyle={styles.row}
-        />
-      </FadeInView>
+      <ErrorBoundary
+        onReset={reset}
+        fallback={({ error, resetErrorBoundary }) => (
+          <ErrorScreen error={error} onRetry={resetErrorBoundary} />
+        )}
+      >
+        <Suspense fallback={<LoadingScreen />}>
+          {/* Недавние книги */}
+          <RecentBooks
+            style={styles.section}
+            onBookPress={handleBookPress}
+          />
+
+          {/* Коллекции */}
+          <CollectionsList
+            style={styles.section}
+            onBookPress={handleBookPress}
+          />
+
+          {/* Основной список книг */}
+          <BookList
+            onBookPress={handleBookPress}
+            renderItem={(book) => (
+              <BookCard
+                book={book}
+                isFavorite={favoriteBooks.has(book.id)}
+                onFavoritePress={() => toggleFavorite(book.id)}
+                onPress={() => handleBookPress(book)}
+              />
+            )}
+          />
+        </Suspense>
+      </ErrorBoundary>
     </View>
   );
 }
@@ -81,13 +72,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-  },
-  list: {
-    padding: spacing.md,
-  },
-  row: {
-    gap: spacing.md,
+  section: {
+    marginBottom: spacing.lg,
   },
 });
