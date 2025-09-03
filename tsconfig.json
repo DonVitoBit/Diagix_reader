@@ -4,14 +4,16 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/lib/*": ["src/lib/*"],
-      "@env": ["node_modules/expo-constants/build/Constants.d.ts"]
+      "@/lib/*": [
+        "src/lib/*"
+      ],
+      "@env": [
+        "node_modules/expo-constants/build/Constants.d.ts"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }
