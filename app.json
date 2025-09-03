@@ -4,7 +4,7 @@
     "slug": "diagix-reader",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "scheme": "diagix-reader",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -24,7 +24,6 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png",
       "bundler": "webpack"
     },
     "plugins": [
